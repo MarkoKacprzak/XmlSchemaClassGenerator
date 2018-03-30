@@ -22,22 +22,21 @@ namespace XmlSchemaClassGenerator.Console
             var integerType = typeof(string);
             var namespacePrefix = "";
             var verbose = false;
-            var nullables = false;
+            var nullables = true;
             var pclCompatible = false;
             var enableDataBinding = false;
             var emitOrder = false;
             var entityFramework = false;
-            var interfaces = true;
+            var interfaces = false;
             var pascal = true;
-            var collectionType = typeof(Collection<>);
+            var collectionType = typeof(List<>);
             Type collectionImplementationType = null;
             var codeTypeReferenceOptions = default(CodeTypeReferenceOptions);
             string textValuePropertyName = "Value";
             var generateDebuggerStepThroughAttribute = true;
             var disableComments = false;
-            var setterInCollection = false;
-            var removeUnderscoreInPrivateMember = false;
-
+            var setterInCollection = true;
+            var removeUnderscoreInPrivateMember = true;
             var options = new OptionSet {
                 { "h|help", "show this message and exit", v => showHelp = v != null },
                 { "n|namespace=", @"map an XML namespace to a C# namespace
@@ -134,6 +133,7 @@ If no mapping is found for an XML namespace, a name is generated automatically (
                 generator.GenerateDebuggerStepThroughAttribute = false;
                 generator.DataAnnotationMode = DataAnnotationMode.None;
             }
+            generator.DataAnnotationMode = DataAnnotationMode.None;
             generator.GenerateSetterInCollection = setterInCollection;
             generator.RemoveUderscoreInPriverMember = removeUnderscoreInPrivateMember;
             if (verbose) { generator.Log = s => System.Console.Out.WriteLine(s); }

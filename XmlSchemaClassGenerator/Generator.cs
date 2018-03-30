@@ -199,10 +199,11 @@ namespace XmlSchemaClassGenerator
             }));
 
             foreach (var s in schemas)
-            {
-                Set.Add(s);
+            {                    
+                Set.Add(s.TargetNamespace,s.SourceUri );
+                // Fix bug Set.Add(s);
             }
-
+            
             Set.Compile();
 
             BuildModel();
