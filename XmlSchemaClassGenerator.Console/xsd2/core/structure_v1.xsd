@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://mbank.com/strefap/core/structure/v1_0"
+           targetNamespace="http://mbank.com/strefap/core/structure/v1_0" elementFormDefault="qualified">
+
+    <xs:complexType name="MessageType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>Typ bazowy dla komunikatu, zawiera nagłówek</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Header" type="tns:Header"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="DataType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>Typ bazowy dla danych komunikatu</xs:documentation>
+        </xs:annotation>
+    </xs:complexType>
+    <xs:complexType name="RequestDataType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>Typ reprezentujący dane żądania</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="tns:DataType"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="ResponseDataType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>Typ reprezentujący dane odpowiedzi</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="tns:DataType"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ParamType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący parametr</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="name" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>nazwa parametru</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="ParamsType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący listę parametrów</xs:documentation>
+        </xs:annotation>
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="Param" type="tns:ParamType">
+                <xs:annotation>
+                    <xs:documentation>parametr</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ErrorType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący błąd</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Message" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>komentarz</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Params" type="tns:ParamsType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>dodatkowe parametry opisujące błąd</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="code" use="required">
+            <xs:annotation>
+                <xs:documentation>kod błędu</xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:minLength value="1"/>
+                    <xs:maxLength value="255"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="ErrorsType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący komunikat błędu</xs:documentation>
+        </xs:annotation>
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="Error" type="tns:ErrorType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Status">
+        <xs:sequence>
+            <xs:element name="Code">
+                <xs:annotation>
+                    <xs:documentation>Kod operacji: 0 - OK, inne - blad (max 20)</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="20"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="Description" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Opis bledu</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Errors" type="tns:ErrorsType" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="srcAppIdType">
+        <xs:annotation>
+            <xs:documentation>Identyfikator aplikacji wysylajacej dany komunikat (max 20)</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="20"/>
+            <xs:whiteSpace value="collapse"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Header">
+        <xs:annotation>
+            <xs:documentation>nagłówek komunikatu</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="ServiceName">
+                <xs:annotation>
+                    <xs:documentation>Nazwa usługi, np. StrefaP.CRM.CreateClient</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="ServiceVersion">
+                <xs:annotation>
+                    <xs:documentation>Wersja biznesowa usługi, format X.Y gdzie X i Y są liczbami naturalnymi, np. 1.0</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+
+            <xs:element name="SrcApplId" type="tns:srcAppIdType">
+                <xs:annotation>
+                    <xs:documentation>identyfikacja aplikacji wysylajacej dany komunikat</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="SourceId" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>identyfikator komunikatu nadany przez system źródłowy</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="FormId" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>numer wniosku ze Strefy pracy</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="CrmId" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>numer klienta z CRM</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="SentDate" type="xs:dateTime">
+                <xs:annotation>
+                    <xs:documentation>data wysłania komunikatu</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:any namespace="##any" processContents="lax" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+
+    <xs:element name="Request">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="tns:MessageType">
+                    <xs:sequence>
+                        <xs:element name="Data" type="tns:RequestDataType"/>
+                        <xs:any namespace="##any" processContents="lax" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Response">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="tns:MessageType">
+                    <xs:sequence>
+                        <xs:element name="Status" type="tns:Status"/>
+                        <xs:element name="Data" type="tns:ResponseDataType"/>
+                        <xs:any namespace="##any" processContents="lax" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

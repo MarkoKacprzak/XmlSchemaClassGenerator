@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://mbank.com/strefap/ft/types/v1_0"
+           xmlns:glob="http://mbank.com/strefap/globus/v1_0"
+           xmlns:cmn="http://mbank.com/strefap/core/types/v1_0"
+           targetNamespace="http://mbank.com/strefap/ft/types/v1_0" elementFormDefault="qualified">
+
+    <xs:import schemaLocation="../core/types_v1.xsd" namespace="http://mbank.com/strefap/core/types/v1_0" />
+    <xs:import schemaLocation="../globus/globus-types_v1.xsd" namespace="http://mbank.com/strefap/globus/v1_0" />
+
+    <xs:complexType name="BranchType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący oddział korporacyjny</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="BankNumber" type="cmn:bankNumberType">
+                <xs:annotation>
+                    <xs:documentation>Identyfikator oddziału (numer rozliczeniowy)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Name" minOccurs="0" type="cmn:line64Type">
+                <xs:annotation>
+                    <xs:documentation>Nazwa oddziału</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="MobilePhoneType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący numer telefonu komórkowego</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="MobilePhone" type="cmn:str16">
+                <xs:annotation>
+                    <xs:documentation>telefon komórkowy</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="AreaCode">
+                <xs:annotation>
+                    <xs:documentation>numer kierunkowy kraju</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="5"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SimpleUsersType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący listę użytkowników</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="SimpleUser" type="tns:SimpleUserType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="SimpleUserType">
+        <xs:annotation>
+            <xs:documentation>Użytkownik: login i nazwa</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Id" type="cmn:mcnLogin">
+                <xs:annotation>
+                    <xs:documentation>login użytkownika w mCN</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Firstname" type="cmn:str32">
+                <xs:annotation>
+                    <xs:documentation>imię (32 znaki)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Surname" type="cmn:str32">
+                <xs:annotation>
+                    <xs:documentation>nawisko (32 znaki)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="UsersType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący listę użytkowników</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="User" type="tns:UserType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="UserType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący użytkownika</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Firstname" type="cmn:str32">
+                <xs:annotation>
+                    <xs:documentation>imię (32 znaki)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Surname" type="cmn:str32">
+                <xs:annotation>
+                    <xs:documentation>nawisko (32 znaki)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Email" type="cmn:str50">
+                <xs:annotation>
+                    <xs:documentation>adres email (50 znaków)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="MobilePhone" type="tns:MobilePhoneType">
+                <xs:annotation>
+                    <xs:documentation>numer telefonu</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Attorneys" type="glob:AttorneysType">
+                <xs:annotation>
+                    <xs:documentation>lista pełnomocników</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Wproxies" type="glob:WProxiesType">
+                <xs:annotation>
+                    <xs:documentation>lista pełnomocnictw rodzajowych</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ClientType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący klienta</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="GlobusCustomers" type="glob:GlobusCustomersType">
+                <xs:annotation>
+                    <xs:documentation>Klienci Globus (C9) jaki ma  być dodany do klienta mCN (minimum 1)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Name" minOccurs="0" type="cmn:line32Type">
+                <xs:annotation>
+                    <xs:documentation>nazwa jaka ma być nadana klientowi w mCN (gdy brak pobierana z nazwy skróconej z C9 wiodącej), 32 znaki (opcjonalny)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="PrimaryBranch" type="tns:BranchType">
+                <xs:annotation>
+                    <xs:documentation>oddział korporacyjny jaki należy przypisać klientowi mCN (wymagany)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Users" type="tns:UsersType">
+                <xs:annotation>
+                    <xs:documentation>użytkownicy jakich należy utworzyć w mCN</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

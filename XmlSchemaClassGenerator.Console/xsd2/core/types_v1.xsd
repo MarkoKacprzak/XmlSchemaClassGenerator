@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://mbank.com/strefap/core/types/v1_0"
+           targetNamespace="http://mbank.com/strefap/core/types/v1_0" elementFormDefault="qualified">
+
+    <xs:simpleType name="str10">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="10"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="str16">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="16"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="str32">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="32"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="str35">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="35"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="str50">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="50"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="str64">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="64"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="line32Type">
+        <xs:annotation>
+            <xs:documentation>Linia 32 znaki (minimum 1), znaki białe znormalizowane</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="32"/>
+            <xs:whiteSpace value="collapse"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="line64Type">
+        <xs:annotation>
+            <xs:documentation>Linia 64 znaki (minimum 1), znaki białe znormalizowane</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="64"/>
+            <xs:whiteSpace value="collapse"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="line128Type">
+        <xs:annotation>
+            <xs:documentation>Linia 128 znaki (minimum 1), znaki białe znormalizowane</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="128"/>
+            <xs:whiteSpace value="collapse"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="sexType">
+        <xs:annotation>
+            <xs:documentation>płeć (K/M)</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:NMTOKEN">
+            <xs:length value="1"/>
+            <xs:enumeration value="K"/>
+            <xs:enumeration value="M"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="pesel">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="16"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="citizenshipCodeType">
+        <xs:restriction base="xs:string">
+            <xs:length value="2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="countryCodeType">
+        <xs:restriction base="xs:string">
+            <xs:length value="2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="bankNumberType">
+        <xs:annotation>
+            <xs:documentation>Numer rozliczeniowy oddziału (dokładnie 8 cyfr)</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\d{8}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="mcnLogin">
+        <xs:annotation>
+            <xs:documentation>login użytkownika w mCN</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="250"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

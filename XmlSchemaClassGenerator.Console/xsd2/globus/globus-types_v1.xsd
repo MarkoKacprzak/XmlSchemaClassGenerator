@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://mbank.com/strefap/globus/v1_0"
+           xmlns:cmn="http://mbank.com/strefap/core/types/v1_0"
+           targetNamespace="http://mbank.com/strefap/globus/v1_0" elementFormDefault="qualified">
+
+    <xs:import schemaLocation="../core/types_v1.xsd" namespace="http://mbank.com/strefap/core/types/v1_0"/>
+
+    <xs:annotation>
+        <xs:documentation>Typy wspólne kojarzone z Globusem</xs:documentation>
+    </xs:annotation>
+
+    <xs:simpleType name="c9NoType">
+        <xs:annotation>
+            <xs:documentation>Numer C9 klienta Globus (9 znakow)</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:length value="9"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="documentType">
+        <xs:annotation>
+            <xs:documentation>typ dokumentu tożsamości:
+                DO - dowód osobisty
+                DT - dowód tymczasowy
+                KP - karta pobytu
+                PA - paszport
+                00 - inny
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:length value="2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="IdentityDocumentType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący dokument tożsamości</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="DocumentType" type="tns:documentType">
+                <xs:annotation>
+                    <xs:documentation>typ dokumentu tożsamości:
+                        DO - dowód osobisty
+                        DT - dowód tymczasowy
+                        KP - karta pobytu
+                        PA- paszport
+                        00- inny
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="DocumentNo">
+                <xs:annotation>
+                    <xs:documentation>numer dokumentu tożsamości (25 znaków)</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="25"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AddressType">
+        <xs:sequence>
+            <xs:element name="Line" maxOccurs="2" type="cmn:line128Type"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Attorey types -->
+    <xs:complexType name="AttorneyAddressType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący adres pełnomocnika</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Type" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>typ adresu
+                        0 - adres stałego zameldowania
+                        1- adres zameldowania czasowego
+                        2- adres do korespondencji
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:length value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="Country" type="cmn:countryCodeType" minOccurs="0" />
+            <xs:element name="Postcode" type="cmn:str10" minOccurs="0" />
+            <xs:element name="City" type="cmn:str35" minOccurs="0" />
+            <xs:element name="Street" type="cmn:str35" minOccurs="0" />
+            <xs:element name="StreetNo" type="cmn:str10" minOccurs="0" />
+            <xs:element name="FlatNo" type="cmn:str10" minOccurs="0" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="attorneyIdentNoType">
+        <xs:annotation>
+            <xs:documentation>identyfikator pełnomocnika w systemie globus (max 14 znaków)</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="14"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="AttorneysType">
+        <xs:annotation>
+            <xs:documentation>Typ opisujący listę pełnomocników w Globus</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Attorney" type="tns:AttorneyType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="AttorneyType">
+        <xs:annotation>
+            <xs:documentation>Typ opisujący pełnomocnika w Globus</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="IdentNo" type="tns:attorneyIdentNoType">
+                <xs:annotation>
+                    <xs:documentation>identyfikator pełnomocnika w systemie globus (max 14 znaków)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Firstname" type="cmn:str64" />
+            <xs:element name="Surname" type="cmn:str64" />
+            <xs:element name="Sex" minOccurs="0" type="cmn:sexType" />
+            <xs:element name="BirthDate" type="xs:date" minOccurs="0" />
+            <xs:element name="Citizenship" minOccurs="0" type="cmn:citizenshipCodeType">
+                <xs:annotation>
+                    <xs:documentation>obywatelstowo</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Pesel" minOccurs="0" type="cmn:pesel"/>
+            <xs:element name="Address" type="tns:AttorneyAddressType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>adres pełnomocnika</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="IdentityDocument" type="tns:IdentityDocumentType">
+                <xs:annotation>
+                    <xs:documentation>dokument tożsamości pełnomocnika</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="GlobusCustomersType">
+        <xs:annotation>
+            <xs:documentation>Typ opisujący listę C9-tek</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="GlobusCustomer" type="tns:GlobusCustomerType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="GlobusCustomerType">
+        <xs:annotation>
+            <xs:documentation>Typ opisujący C9-tkę</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="CustomerNo" type="tns:c9NoType">
+                <xs:annotation>
+                    <xs:documentation>numer C9 klienta Globus</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ShortName" type="cmn:line128Type" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>skrócona nazwa klienta (opcjonalny)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Name" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>pełna nazwa klienta (opcjonalny)</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Line" maxOccurs="2" type="cmn:line128Type"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Address" type="tns:AddressType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>adres klienta (opcjonalny)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="leading" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Wskazanie czy C9 jest wiodąca (opcjonalne)</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="attorneyRepresentationType">
+        <xs:annotation>
+            <xs:documentation>typ reprezentacji: S-samodzielnie, P-w parze</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="S"/>
+            <xs:enumeration value="P"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="WProxiesType">
+        <xs:annotation>
+            <xs:documentation>typ opisujący listę pełnomocnictw rodzajowych dla poszczególnych C9-tek</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Wproxy" type="tns:WProxyType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="WProxyType">
+        <xs:annotation>
+            <xs:documentation>Typ opisujący pełnomocnictwo rodzajowe</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="CustomerNo" type="tns:c9NoType">
+                <xs:annotation>
+                    <xs:documentation>numer C9 klienta Globus</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="AttorneyIdentNo" type="tns:attorneyIdentNoType">
+                <xs:annotation>
+                    <xs:documentation>numer pełnomocnika</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="StartDate" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>data początkowa</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="EndDate" type="xs:date" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>data końcowa</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Type" type="tns:attorneyRepresentationType">
+                <xs:annotation>
+                    <xs:documentation>typ reprezentacji: S/P</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

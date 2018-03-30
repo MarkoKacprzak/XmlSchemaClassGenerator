@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://mbank.com/strefap/ft/service/v1_0"
+           xmlns:str="http://mbank.com/strefap/core/structure/v1_0"
+           xmlns:ftt="http://mbank.com/strefap/ft/types/v1_0"
+           targetNamespace="http://mbank.com/strefap/ft/service/v1_0" elementFormDefault="qualified">
+
+    <xs:import schemaLocation="ft-types_v1.xsd" namespace="http://mbank.com/strefap/ft/types/v1_0"/>
+    <xs:import schemaLocation="../core/structure_v1.xsd" namespace="http://mbank.com/strefap/core/structure/v1_0"/>
+
+    <xs:annotation>
+        <xs:documentation>Definicja obiektów usług FastTrack dla CRM</xs:documentation>
+    </xs:annotation>
+
+    <xs:complexType name="CreateClientRequestData">
+        <xs:annotation>
+            <xs:documentation>Usługa założenia nowego klienta: StrefaP.FT.CreateClient</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="str:RequestDataType">
+                <xs:sequence>
+                    <xs:element name="Client" type="ftt:ClientType" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="CreateClientResponseData">
+        <xs:annotation>
+            <xs:documentation>Odpowiedź na usługę założenia nowego klienta: StrefaP.FT.CreateClient</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="str:ResponseDataType">
+                <xs:sequence>
+                    <xs:element name="SimpleUsers" type="ftt:SimpleUsersType">
+                        <xs:annotation>
+                            <xs:documentation>lista utworzonych użytkowników mCN</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+</xs:schema>

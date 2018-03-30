@@ -12,6 +12,26 @@
   <ItemGroup>
     <ProjectReference Include="..\XmlSchemaClassGenerator\XmlSchemaClassGenerator.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="xsd2\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="xsd2\core\structure_v1.xsd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="xsd2\core\types_v1.xsd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="xsd2\ft\ft-services_v1.xsd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="xsd2\ft\ft-types_v1.xsd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="xsd2\globus\globus-types_v1.xsd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
     <DefineConstants>$(DefineConstants);NETSTANDARD</DefineConstants>
   </PropertyGroup>
