@@ -78,8 +78,8 @@ If no mapping is found for an XML namespace, a name is generated automatically (
                 { "tvpn|textValuePropertyName=", "the name of the property that holds the text value of an element (default is Value)", v => textValuePropertyName = v },
                 { "dst|debuggerStepThrough", "generate DebuggerStepThroughAttribute (default is enabled)", v => generateDebuggerStepThroughAttribute = v != null },
                 { "dc|disableComments", "do not include comments from xsd", v => disableComments = v != null },
-                { "sc|setterInCollection", "generate setter in Collection (default is false)", v => setterInCollection = v != null },
-                { "ru|removeUderscore", "do not generate uderscore in priver member name (default is false)", v => removeUnderscoreInPrivateMember = v != null },
+                { "sc|setterInCollection", "generate setter in Collection (default is false)", v => setterInCollection = v == "true" },
+                { "ru|removeUderscore", "do not generate uderscore in priver member name (default is false)", v => removeUnderscoreInPrivateMember = v == "true" },
             };
 
             var files = options.Parse(args);
