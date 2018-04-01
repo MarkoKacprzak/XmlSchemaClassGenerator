@@ -51,6 +51,18 @@ namespace XmlSchemaClassGenerator
                 codeNamespace.Imports.Add(new CodeNamespaceImport("System.ComponentModel"));
             }
 
+            var valueTypeEnable = typeModels.OfType<ClassModel>()
+                .Any(x => x.ValueTypeEnable);
+
+            if (valueTypeEnable)
+            {
+                var inheritenceNamespace = typeModels.OfType<ClassModel>()
+                .Select(x => x.InheritenceNamespace)
+                .Where(x => !string.IsNullOrEmpty(x))
+                .First();
+                codeNamespace.Imports.Add(new CodeNamespaceImport(inheritenceNamespace));
+            }
+
             foreach (var typeModel in typeModels)
             {
                 var type = typeModel.Generate();
@@ -212,6 +224,8 @@ namespace XmlSchemaClassGenerator
         public List<ClassModel> DerivedTypes { get; set; }
         public bool EnableDataBinding { get; set; }
         public bool RemoveUderscoreInPriverMember { get; set; }
+        public string InheritenceNamespace { get; set; }
+        public bool ValueTypeEnable { get; set; }
 
         public ClassModel(GeneratorConfiguration configuration)
             : base(configuration)
@@ -395,8 +409,111 @@ namespace XmlSchemaClassGenerator
             }
 
             classDeclaration.BaseTypes.AddRange(Interfaces.Select(i => i.GetReferenceFor(Namespace, false)).ToArray());
+            if (Configuration.ValueTypeEnable)
+                GenerateGetEqualityMethod(classDeclaration);
 
             return classDeclaration;
+        }
+        private void GenerateGetEqualityMethod(CodeTypeDeclaration classDeclaration)
+        {
+            var hasNoBaseClass = classDeclaration.BaseTypes.Count == 0;
+            if (hasNoBaseClass)
+                classDeclaration.BaseTypes.Add(new CodeTypeReference(Configuration.InheritenceName));
+            var getEqualityComponents = new CodeMemberMethod
+            {
+                Name = "GetEqualityComponents",
+                ReturnType = new CodeTypeReference("IEnumerable<object>"),
+                Attributes = MemberAttributes.Override | MemberAttributes.Family,
+            };
+            if (!hasNoBaseClass)
+                getEqualityComponents.Statements.Add(new CodeSnippetStatement($"            yield return base.GetEqualityComponents();"));
+            foreach (var item in classDeclaration.Members)
+            {
+                var itemCode = item as CodeMemberField;
+                if (itemCode == null || itemCode.Attributes != MemberAttributes.Public)
+                    continue;
+                var nameOfProperties = itemCode.Name.Split(' ')[0];
+
+                //var dateTimeAsDate = new CodeAttributeArgument("DataType", new CodePrimitiveExpression(nameOfProperties));
+                if (CheckIfIsDateTimeWithDateSignature(itemCode.CustomAttributes))
+                    nameOfProperties += ".Date";
+
+                getEqualityComponents.Statements.Add(new CodeSnippetStatement($"            yield return {nameOfProperties};"));
+            }
+            if (getEqualityComponents.Statements.Count == 0)
+            {
+                getEqualityComponents.Statements.Add(new CodeSnippetStatement($"            return new List<object>();"));
+            }
+            classDeclaration.Members.Add(getEqualityComponents);
+            GenerateEqualMethod(classDeclaration);
+        }
+
+        private bool CheckIfIsDateTimeWithDateSignature(CodeAttributeDeclarationCollection customAttributes)
+        {
+            foreach (CodeAttributeDeclaration attribure in customAttributes)
+            {
+                foreach (CodeAttributeArgument ss in attribure.Arguments)
+                {
+                    if (ss.Name == "DataType")
+                    {
+                        return (ss.Value is CodePrimitiveExpression specyficType &&
+                            specyficType.Value.ToString().ToLower() == "date");
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void GenerateEqualMethod(CodeTypeDeclaration codeType)
+        {
+            var code = new StringBuilder(
+     @"        public static bool operator ==({0} left, {0} right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=({0} left, {0} right)
+        {
+            return !left.Equals(right);
+        }
+
+        public static bool operator ==(object left, {0} right)
+        {
+            if (left is {0})
+                return right.Equals(left);
+            return false;
+        }
+        public static bool operator ==({0} left, object right)
+        {
+            if (right is {0})
+                return left.Equals(right);
+            return false;
+        }
+        public static bool operator !=(object left, {0} right)
+        {
+            if (left is {0})
+                return !right.Equals(left);
+            return true;
+        }
+        public static bool operator !=({0} left, object right)
+        {
+            if (right is {0})
+                return !left.Equals(right);
+            return true;
+        }
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }");
+            var getEqualMethod = new CodeSnippetTypeMember(
+                CodeUtilities.NormalizeNewlines(
+                    code.Replace("{0}", codeType.Name).ToString()));
+            codeType.Members.Add(getEqualMethod);
         }
 
         public List<ClassModel> GetAllDerivedTypes()
@@ -1035,6 +1152,103 @@ namespace XmlSchemaClassGenerator
         public EnumValueModel()
         {
             Documentation = new List<DocumentationModel>();
+        }
+    }
+
+    public class ValueObjectModel : TypeModel
+    {
+        public static CodeNamespace GettNamespace(GeneratorConfiguration configuration)
+        {
+            var codeNamespace = new CodeNamespace(configuration.InheritenceNamespace);
+            codeNamespace.Imports.Add(new CodeNamespaceImport("System"));
+            codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections"));
+            codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections.Generic"));
+            codeNamespace.Imports.Add(new CodeNamespaceImport("System.Linq"));
+            var type = new ValueObjectModel(configuration).Generate();
+            codeNamespace.Types.Add(type);
+            return codeNamespace;
+        }
+        public ValueObjectModel(GeneratorConfiguration configuration) : base(configuration)
+        {
+        }
+        public override CodeTypeDeclaration Generate()
+        {
+            var valueObjectDeclaration = base.Generate();
+            valueObjectDeclaration.IsClass = true;
+            valueObjectDeclaration.IsPartial = false;
+            valueObjectDeclaration.TypeAttributes = TypeAttributes.Abstract|TypeAttributes.Class|TypeAttributes.Public;
+            valueObjectDeclaration.Name = Configuration.InheritenceName;
+            GenerateValueObjectMethod(valueObjectDeclaration);
+            return valueObjectDeclaration;
+        }
+        private void GenerateValueObjectMethod(CodeTypeDeclaration classDeclaration)
+        {
+            var code = new StringBuilder(
+@"        protected abstract IEnumerable<object> GetEqualityComponents();
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            if (GetType() != obj.GetType())
+                throw new ArgumentException($""Invalid comparison of Value Objects of different types: {GetType()} and {obj.GetType()}"");
+
+            return GetHashCode() == obj.GetHashCode();
+        }
+
+        private void UpdateHashCode(IEnumerable enumerable, ref int hashCode)
+        {
+            unchecked
+            {
+                var enumerator = enumerable.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    if (enumerator.Current is IEnumerable)
+                        UpdateHashCode((IEnumerable)enumerator.Current, ref hashCode);
+                    else
+                        hashCode = hashCode * 23 + (enumerator.Current?.GetHashCode() ?? 0);
+                }
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return GetEqualityComponents()
+                .Aggregate(1, (current, obj) =>
+                {
+                    unchecked
+                    {
+                        var enumerable = obj as IEnumerable;
+                        if (enumerable != null)
+                        {
+                            UpdateHashCode(enumerable, ref current);
+                            return current;
+                        }
+                        return current * 23 + (obj?.GetHashCode() ?? 0);
+                    }
+                });
+        }
+
+        public static bool operator ==({0} a, {0} b)
+        {
+            if (ReferenceEquals(a, null) && ReferenceEquals(b, null))
+                return true;
+
+            if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
+                return false;
+
+            return a.Equals(b);
+        }
+
+        public static bool operator !=({0} a, {0} b)
+        {
+            return !(a == b);
+        }");
+
+            var getEqualMethod = new CodeSnippetTypeMember(
+                CodeUtilities.NormalizeNewlines(code.Replace("{0}", Configuration.InheritenceName).ToString()));
+            classDeclaration.Members.Add(getEqualMethod);
         }
     }
 

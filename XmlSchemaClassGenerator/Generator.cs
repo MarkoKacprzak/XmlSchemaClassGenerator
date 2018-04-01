@@ -184,6 +184,22 @@ namespace XmlSchemaClassGenerator
             set { _configuration.RemoveUderscoreInPriverMember = value; }
         }
 
+        public bool ValueTypeEnable
+        {
+            get { return _configuration.ValueTypeEnable; }
+            set { _configuration.ValueTypeEnable = value; }
+        }
+        public string InheritenceName
+        {
+            get { return _configuration.InheritenceName; }
+            set { _configuration.InheritenceName = value; }
+        }
+        public string InheritenceNamespace
+        {
+            get { return _configuration.InheritenceNamespace; }
+            set { _configuration.InheritenceNamespace = value; }
+        }
+
         private readonly XmlSchemaSet Set = new XmlSchemaSet();
         private Dictionary<XmlQualifiedName, XmlSchemaAttributeGroup> AttributeGroups;
         private Dictionary<XmlQualifiedName, XmlSchemaGroup> Groups;
@@ -210,6 +226,13 @@ namespace XmlSchemaClassGenerator
 
             var namespaces = GenerateCode();
 
+            if (_configuration.ValueTypeEnable)
+            {
+                var addNewClass = namespaces.ToList();
+                addNewClass.Add(ValueObjectModel.GettNamespace(_configuration));
+                namespaces = addNewClass.ToList();
+            }
+
             var provider = new Microsoft.CSharp.CSharpCodeProvider();
 
             foreach (var ns in namespaces)
@@ -227,7 +250,15 @@ namespace XmlSchemaClassGenerator
                 {
                     provider.GenerateCodeFromCompileUnit(compileUnit, sw, new CodeGeneratorOptions { VerbatimOrder = true, BracingStyle = "C" });
                     var s = sw.ToString().Replace("};", "}"); // remove ';' at end of automatic properties
-                    var path = Path.Combine(OutputFolder, ns.Name + ".cs");
+                    var path = string.Empty;
+                    if (ns.Name == _configuration.InheritenceNamespace)
+                    {
+                        path = Path.Combine(OutputFolder, _configuration.InheritenceName + ".cs");
+                    }
+                    else
+                    {
+                        path = Path.Combine(OutputFolder, ns.Name + ".cs");
+                    }
                     Log?.Invoke(path); File.WriteAllText(path, s);
                 }
             }
@@ -427,7 +458,9 @@ namespace XmlSchemaClassGenerator
                     IsMixed = complexType.IsMixed,
                     IsSubstitution = complexType.Parent is XmlSchemaElement && !((XmlSchemaElement)complexType.Parent).SubstitutionGroup.IsEmpty,
                     EnableDataBinding = EnableDataBinding,
-                    RemoveUderscoreInPriverMember = RemoveUderscoreInPriverMember
+                    RemoveUderscoreInPriverMember = RemoveUderscoreInPriverMember,
+                    InheritenceNamespace= InheritenceNamespace,
+                    ValueTypeEnable= ValueTypeEnable
                 };
 
                 classModel.Documentation.AddRange(docs);

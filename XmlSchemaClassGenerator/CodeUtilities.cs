@@ -9,6 +9,21 @@ namespace XmlSchemaClassGenerator
 {
     public static class CodeUtilities
     {
+        static readonly List<string> CShaprpKeywords = new List<string>
+        {
+            "params",
+            "extern",
+            "base",
+            "byte",
+            "case",
+            "delegate",
+            "event",
+            "operator",
+            "sealed",
+            "struct",
+            "unsafe",
+            "volatile"
+        };
         // Match non-letter followed by letter
         static Regex PascalCaseRegex = new Regex(@"[^\p{L}]\p{L}", RegexOptions.Compiled);
 
@@ -173,6 +188,10 @@ namespace XmlSchemaClassGenerator
         {
             var classModel = typeModel as ClassModel;
             var propBackingFieldName = propertyModel.Name.ToBackingField(classModel?.RemoveUderscoreInPriverMember==true);
+
+            if (CShaprpKeywords.Contains(propBackingFieldName.ToLower()))
+                propBackingFieldName = "@" + propBackingFieldName;
+
             if (classModel == null)
             {
                 return propBackingFieldName;

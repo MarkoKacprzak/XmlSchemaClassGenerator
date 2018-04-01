@@ -160,6 +160,8 @@ namespace XmlSchemaClassGenerator
         public bool DisableComments { get; set; }
         public bool GenerateSetterInCollection { get; set; }
         public bool RemoveUderscoreInPriverMember { get; set; }
-
+        public bool ValueTypeEnable { get; set; }
+        public string InheritenceName { get; set; }
+        public string InheritenceNamespace { get; set; }
     }
 }

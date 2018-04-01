@@ -16,6 +16,10 @@ namespace XmlSchemaClassGenerator.Console
     {
         static void Main(string[] args)
         {
+            //http://enterprisecraftsmanship.com/2017/08/28/value-object-a-better-implementation/
+            const string valueTypeName = "ValueObject";
+            const string valueTypeNamespace = "CSharpFunctionalExtensions";
+
             var showHelp = args.Length == 0;
             var namespaces = new List<string>();
             var outputFolder = "";
@@ -33,6 +37,10 @@ namespace XmlSchemaClassGenerator.Console
             Type collectionImplementationType = null;
             var codeTypeReferenceOptions = default(CodeTypeReferenceOptions);
             string textValuePropertyName = "Value";
+            string inheritenceName=null;
+            string inheritenceNamespace = null;
+            var valueTypeEnable = false;
+
             var generateDebuggerStepThroughAttribute = true;
             var disableComments = false;
             var setterInCollection = true;
@@ -78,8 +86,11 @@ If no mapping is found for an XML namespace, a name is generated automatically (
                 { "tvpn|textValuePropertyName=", "the name of the property that holds the text value of an element (default is Value)", v => textValuePropertyName = v },
                 { "dst|debuggerStepThrough", "generate DebuggerStepThroughAttribute (default is enabled)", v => generateDebuggerStepThroughAttribute = v != null },
                 { "dc|disableComments", "do not include comments from xsd", v => disableComments = v != null },
-                { "sc|setterInCollection", "generate setter in Collection (default is false)", v => setterInCollection = v == "true" },
-                { "ru|removeUderscore", "do not generate uderscore in priver member name (default is false)", v => removeUnderscoreInPrivateMember = v == "true" },
+                { "rsc|removeSetterInCollection", "don't generate setter in Collection (default is false)", v => setterInCollection = !(v != null) },
+                { "pu|privateUnderscore", "generate underscore in priver member name (default is false)", v => removeUnderscoreInPrivateMember = !(v != null) },
+                { "vt|valueType","generate class derived from value type class (default is false)", v => valueTypeEnable = (v!=null) },
+                { "ih|inheritenceName=", "valueType name (default is ValueObject)", v => inheritenceName = v },
+                { "in|inheritenceNamespace=", "valueType namespace (default is CSharpFunctionalExtensions)", v => inheritenceNamespace = v },
             };
 
             var files = options.Parse(args);
@@ -136,6 +147,10 @@ If no mapping is found for an XML namespace, a name is generated automatically (
             generator.DataAnnotationMode = DataAnnotationMode.None;
             generator.GenerateSetterInCollection = setterInCollection;
             generator.RemoveUderscoreInPriverMember = removeUnderscoreInPrivateMember;
+            generator.InheritenceName = inheritenceName ?? valueTypeName;
+            generator.InheritenceNamespace = inheritenceNamespace ?? valueTypeNamespace;
+            generator.ValueTypeEnable = valueTypeEnable;
+
             if (verbose) { generator.Log = s => System.Console.Out.WriteLine(s); }
 
             generator.Generate(files);
