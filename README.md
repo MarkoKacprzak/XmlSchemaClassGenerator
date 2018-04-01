@@ -24,12 +24,12 @@ from schema restrictions
 * Optionally generate interfaces for groups and attribute groups
 
 In my public repo I've add new feature: (all available in parameters in console)
-* default - don't generate _ in prefix in private member - instead camelCase
-* default - add setters in List - default collection (possible to change type + remove setter)
-* posible generate each class as ValueType (override Equal() and GetHash() ) you can check value fromXmlObj==secondFromXmlObj
+* Default - don't generate _ in prefix in private member - instead camelCase
+* Default - add setters in List - default collection (possible to change type + remove setter)
+* Possible generate each class as ValueType (override Equal() and GetHash() ) you can check value fromXmlObj==secondFromXmlObj
    inspired  [`ValueType`](http://enterprisecraftsmanship.com/2017/08/28/value-object-a-better-implementation/)
-* name of interface IValueType full customizable (name and namespace) default (ValueObject and CSharpFunctionalExtensions)
-* fix bug [`Issue54`](https://github.com/mganss/XmlSchemaClassGenerator/issues/54)
+* Name of interface IValueType full customizable (name and namespace) default (ValueObject and CSharpFunctionalExtensions)
+* Fix bug [`Issue54`](https://github.com/mganss/XmlSchemaClassGenerator/issues/54)
 
 
 Unsupported:
@@ -231,7 +231,7 @@ or simple:
 XmlSchemaClassGenerator.Console.exe -p My.NameSpace.For.Class.From.Xsd -vt xsd\*\*.xsd
 ```
 
-After that you have the object that you can compare by content. You can alsa option to configure how to compare on each class - GetEqualityComponents() - default with all puplic members (if in xsd DateTime is Date - that compare only Date)
+After that you have the object that you can compare by content. You can also options to configure how to compare each class - GetEqualityComponents() - default is to use all public members (if in xsd DateTime is date - than compare only Date)
 ```C#
 var header = new Header
 {
