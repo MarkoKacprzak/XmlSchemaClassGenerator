@@ -217,9 +217,11 @@ generator.Generate(files);
 ```
 From Command line for files: 
 
+```C#
 xsd\common\common.xsd
 xsd\lib\lib.xsd
 xsd\service\service.xsd
+```
 
 ```C#
 XmlSchemaClassGenerator.Console.exe -p My.NameSpace.For.Class.From.Xsd -vt -ih=ValueObject -in=CSharpFunctionalExtensions  xsd\*\*.xsd
@@ -227,6 +229,21 @@ XmlSchemaClassGenerator.Console.exe -p My.NameSpace.For.Class.From.Xsd -vt -ih=V
 or simple:
 ```C#
 XmlSchemaClassGenerator.Console.exe -p My.NameSpace.For.Class.From.Xsd -vt xsd\*\*.xsd
+```
+
+After that you have the object that you can compare by content. You can alsa option to configure how to compare on each class - GetEqualityComponents() - default with all puplic members (if in xsd DateTime is Date - that compare only Date)
+```C#
+var header = new Header
+{
+        CrmId = "test",
+        FormId = "test2",
+        SentDate = DateTime.Now,
+        ServiceName = "test"
+}
+var xml = header.XmlSerializeToString();
+var actual = xml.XmlDeserializeFromString(typeof(Header));
+bool equalObjects = actual == header;
+/* equalObjects is true */           
 ```
 
 Nullables<a name="nullables"></a>
