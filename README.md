@@ -1,9 +1,5 @@
-XmlSchemaClassGenerator
+XmlSchemaClassGenerator => From mganss/XmlSchemaClassGenerator
 =======================
-
-[![NuGet version](https://badge.fury.io/nu/XmlSchemaClassGenerator-beta.svg)](http://badge.fury.io/nu/XmlSchemaClassGenerator-beta)
-[![Build status](https://ci.appveyor.com/api/projects/status/yhxiw0stmv5y7f6n/branch/master?svg=true)](https://ci.appveyor.com/project/mganss/xmlschemaclassgenerator/branch/master)
-[![codecov.io](https://codecov.io/github/mganss/XmlSchemaClassGenerator/coverage.svg?branch=master)](https://codecov.io/github/mganss/XmlSchemaClassGenerator?branch=master)
 
 A console program and library to generate 
 [XmlSerializer](http://msdn.microsoft.com/en-us/library/system.xml.serialization.xmlserializer.aspx) compatible C# classes
@@ -26,6 +22,15 @@ from schema restrictions
 * Optional support for [`INotifyPropertyChanged`](http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged)
 * Optional support for Entity Framework Code First (automatically generate key properties)
 * Optionally generate interfaces for groups and attribute groups
+
+In my public repo I've add new feature: (all available in parameters in console)
+* default - don't generate _ in prefix in private member - instead camelCase
+* default - add setters in List - default collection (possible to change type + remove setter)
+* posible generate each class as ValueType (override Equal() and GetHash() ) you can check value fromXmlObj==secondFromXmlObj
+   inspired  [`ValueType`](http://enterprisecraftsmanship.com/2017/08/28/value-object-a-better-implementation/)
+* name of interface IValueType full customizable (name and namespace) default (ValueObject and CSharpFunctionalExtensions)
+* fix bug [`Issue54`](https://github.com/mganss/XmlSchemaClassGenerator/issues/54)
+
 
 Unsupported:
 
@@ -93,9 +98,108 @@ Options:
       --dst, --debuggerStepThrough
                              generate DebuggerStepThroughAttribute (default is
                                enabled)
+
+NewOne:
+
+      --rsc, --removeSetterInCollection
+                             don't generate setter in Collection (default is
+                               false)
+      --pu, --privateUnderscore
+                             generate underscore in priver member name (default
+                               is false)
+      --vt, --valueType      generate class derived from value type class (
+                               default is false)
+      --ih, --inheritenceName=VALUE
+                             valueType name (default is ValueObject)
+      --in, --inheritenceNamespace=VALUE
+                             valueType namespace (default is
+                               CSharpFunctionalExtensions)
+
 ```
 
 From code:
+
+ValueType<a name="valueType"></a>
+-----------------------------------
+
+Generate additional class that implemented logic for calculating HashCode for each object that implement 
+
+```C#
+public interface IValueObject
+{
+   IEnumerable<object> GetEqualityComponents();
+}
+public class ValueObject
+{
+    public static bool EqualsValueObject(IValueObject a, IValueObject b){ .... }
+    public static int GetHashCodeValueObject(IValueObject valueObject){ .... }
+}
+```
+On each class generated from xsd that implement IValueObject there is additional helper generation:
+```C#
+[System.SerializableAttribute()]
+[System.Xml.Serialization.XmlTypeAttribute("MessageType", Namespace="http://my/custome/namespace")]
+[System.ComponentModel.DesignerCategoryAttribute("code")]
+[System.Xml.Serialization.XmlIncludeAttribute(typeof(Request))]
+[System.Xml.Serialization.XmlIncludeAttribute(typeof(Response))]
+public partial class MessageType : IValueObject
+{
+    [System.Xml.Serialization.XmlElementAttribute("Header", Namespace="http://my/custome/namespace")]
+    public Header Header { get; set; }
+        
+    public virtual IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Header;
+    }
+    public static bool operator ==(MessageType left, MessageType right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(MessageType left, MessageType right)
+    {
+        return !left.Equals(right);
+    }
+
+    public static bool operator ==(object left, MessageType right)
+    {
+        if (left is MessageType)
+          return right.Equals(left);
+        return false;
+    }
+    public static bool operator ==(MessageType left, object right)
+    {
+        if (right is MessageType)
+            return left.Equals(right);
+        return false;
+    }
+    public static bool operator !=(object left, MessageType right)
+    {
+        if (left is MessageType)
+            return !right.Equals(left);
+        return true;
+    }
+    public static bool operator !=(MessageType left, object right)
+    {
+        if (right is MessageType)
+            return !left.Equals(right);
+        return true;
+    }
+    public override bool Equals(object obj)
+    {
+        var compare = obj as IValueObject;
+        if (compare == null)
+            return false;
+        return ValueObject.EqualsValueObject(this, compare);
+    }
+    public override int GetHashCode()
+    {
+        return ValueObject.GetHashCodeValueObject(this);
+    }
+}
+```
+
+Setup for that logic:
 
 ```C#
 var generator = new Generator
@@ -103,26 +207,26 @@ var generator = new Generator
     OutputFolder = outputFolder,
     Log = s => Console.Out.WriteLine(s),
     GenerateNullables = true,
-    NamespaceProvider = new Dictionary<NamespaceKey, string> 
-    { 
-        { new NamespaceKey("http://wadl.dev.java.net/2009/02"), "Wadl" } 
-    }
-    .ToNamespaceProvider(new GeneratorConfiguration { NamespacePrefix = "Wadl" }.NamespaceProvider.GenerateNamespace)
+    ValueTypeEnable = true,
+    InheritenceName = "ValueObject",
+    InheritenceNamespace = "CSharpFunctionalExtensions",
+    NamespacePrefix = "My.NameSpace.For.Class.From.Xsd"
 };
 
 generator.Generate(files);
 ```
+From Command line for files: 
 
-Specifying the `NamespaceProvider` is optional. If you don't provide one, C# namespaces will be generated automatically. The example above shows how to create a custom `NamespaceProvider` that has a dictionary for a number of specific namespaces as well as a generator function for XML namespaces that are not in the dictionary. In the example the generator function is the default function but with a custom namespace prefix. You can also use a custom generator function, e.g.
+xsd\common\common.xsd
+xsd\lib\lib.xsd
+xsd\service\service.xsd
 
 ```C#
-var generator = new Generator
-{
-    NamespaceProvider = new NamespaceProvider
-    { 
-        GenerateNamespace = key => ...
-    }
-};
+XmlSchemaClassGenerator.Console.exe -p My.NameSpace.For.Class.From.Xsd -vt -ih=ValueObject -in=CSharpFunctionalExtensions  xsd\*\*.xsd
+```
+or simple:
+```C#
+XmlSchemaClassGenerator.Console.exe -p My.NameSpace.For.Class.From.Xsd -vt xsd\*\*.xsd
 ```
 
 Nullables<a name="nullables"></a>
@@ -236,7 +340,3 @@ Collection types
 Values for the `--collectionType` and `--collectionImplementationType` options have to be given in the format accepted by
 the [`Type.GetType()`](https://docs.microsoft.com/en-us/dotnet/api/system.type.gettype) method. For the `System.Collections.Generic.List<T>` class this means ``System.Collections.Generic.List`1``.
 
-Contributing
-------------
-
-Pull requests are welcome :)
