@@ -124,7 +124,9 @@ namespace XmlSchemaClassGenerator.Tests
         [UseCulture("en-US")]
         public void CanDeserializeSampleClientWithToValueObjectXml()
         {
-            Compile("Client", ClientPattern, GetValueObjectGeneratorStartup());
+            var config = GetValueObjectGeneratorStartup();
+            config.NamespacePrefix = "Client";
+            Compile("Client", ClientPattern, config);
             TestWithValueTypeInheritenceSamples("Client", ClientPattern);
         }
 
