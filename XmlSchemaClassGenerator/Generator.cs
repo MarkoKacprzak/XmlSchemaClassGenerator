@@ -229,7 +229,7 @@ namespace XmlSchemaClassGenerator
             if (_configuration.ValueTypeEnable)
             {
                 var addNewClass = namespaces.ToList();
-                addNewClass.Add(ValueObjectModel.GettNamespace(_configuration));
+                addNewClass.Add(ValueObjectNamespace.GettNamespace(_configuration));
                 namespaces = addNewClass.ToList();
             }
 
@@ -456,11 +456,7 @@ namespace XmlSchemaClassGenerator
                     IsAbstract = complexType.IsAbstract,
                     IsAnonymous = complexType.QualifiedName.Name == "",
                     IsMixed = complexType.IsMixed,
-                    IsSubstitution = complexType.Parent is XmlSchemaElement && !((XmlSchemaElement)complexType.Parent).SubstitutionGroup.IsEmpty,
-                    EnableDataBinding = EnableDataBinding,
-                    RemoveUderscoreInPriverMember = RemoveUderscoreInPriverMember,
-                    InheritenceNamespace= InheritenceNamespace,
-                    ValueTypeEnable= ValueTypeEnable
+                    IsSubstitution = complexType.Parent is XmlSchemaElement && !((XmlSchemaElement)complexType.Parent).SubstitutionGroup.IsEmpty
                 };
 
                 classModel.Documentation.AddRange(docs);

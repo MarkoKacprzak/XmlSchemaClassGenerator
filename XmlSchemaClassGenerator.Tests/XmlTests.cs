@@ -39,7 +39,9 @@ namespace XmlSchemaClassGenerator.Tests
                 GenerateDesignerCategoryAttribute = false,
                 EntityFramework = false,
                 GenerateInterfaces = true,
-                NamespacePrefix = name
+                NamespacePrefix = name,
+                InheritenceName = "ValueObject",
+                InheritenceNamespace = "CSharpFunctionalExtensions"
             };
 
             var gen = new Generator
@@ -53,7 +55,10 @@ namespace XmlSchemaClassGenerator.Tests
                 GenerateDesignerCategoryAttribute = generatorPrototype.GenerateDesignerCategoryAttribute,
                 EntityFramework = generatorPrototype.EntityFramework,
                 GenerateInterfaces = generatorPrototype.GenerateInterfaces,
-                MemberVisitor = generatorPrototype.MemberVisitor
+                MemberVisitor = generatorPrototype.MemberVisitor,
+                InheritenceName = generatorPrototype.InheritenceName,
+                InheritenceNamespace = generatorPrototype.InheritenceNamespace,
+                ValueTypeEnable = generatorPrototype.ValueTypeEnable,
             };
 
             var files = Glob.Glob.ExpandNames(pattern);
@@ -93,14 +98,58 @@ namespace XmlSchemaClassGenerator.Tests
         const string ClientPattern = @"xsd\client\client.xsd";
         const string IataPattern = @"xsd\iata\????[^_][^_]?[^-]*.xsd";
 
+        private Generator GetValueObjectGeneratorStartup()
+            => new Generator
+            {
+                GenerateNullables = true,
+                IntegerDataType = typeof(int),
+                DataAnnotationMode = DataAnnotationMode.All,
+                GenerateDesignerCategoryAttribute = false,
+                EntityFramework = false,
+                GenerateInterfaces = true,
+                ValueTypeEnable = true,
+                InheritenceName = "ValueObject",
+                InheritenceNamespace = "CSharpFunctionalExtensions",
+            };
+
         [Fact, TestPriority(1)]
         [UseCulture("en-US")]
-        public void CanDeserializeSampleXml()
+        public void CanDeserializeSampleClientXml()
         {
             Compile("Client", ClientPattern);
             TestSamples("Client", ClientPattern);
+        }
+
+        [Fact, TestPriority(1)]
+        [UseCulture("en-US")]
+        public void CanDeserializeSampleClientWithToValueObjectXml()
+        {
+            Compile("Client", ClientPattern, GetValueObjectGeneratorStartup());
+            TestWithValueTypeInheritenceSamples("Client", ClientPattern);
+        }
+
+        [Fact, TestPriority(2)]
+        [UseCulture("en-US")]
+        public void CanDeserializeSampleIS24RestApiXml()
+        {
             Compile("IS24RestApi", IS24Pattern);
             TestSamples("IS24RestApi", IS24Pattern);
+        }
+
+        [Fact, TestPriority(2)]
+        [UseCulture("en-US")]
+        public void CanDeserializeSampleIS24RestApiWithToValueObjectXml()
+        {
+            var config = GetValueObjectGeneratorStartup();
+            config.NamespacePrefix = "IS24RestApi";
+            Compile("IS24RestApi", IS24Pattern, config);
+            TestWithValueTypeInheritenceSamples("IS24RestApi", IS24Pattern);
+        }
+
+        [Fact, TestPriority(3)]
+        [UseCulture("en-US")]
+        public void CanDeserializeSampleWadlXml()
+        {
             Compile("Wadl", WadlPattern, new Generator
             {
                 EntityFramework = true,
@@ -109,8 +158,48 @@ namespace XmlSchemaClassGenerator.Tests
                 MemberVisitor = (member, model) => { }
             });
             TestSamples("Wadl", WadlPattern);
+        }
+
+        [Fact, TestPriority(3)]
+        [UseCulture("en-US")]
+        public void CanDeserializeSampleWadlWithToValueObjectXml()
+        {
+            var config = GetValueObjectGeneratorStartup();
+            Compile("Wadl", WadlPattern, new Generator
+            {
+                EntityFramework = true,
+                DataAnnotationMode = DataAnnotationMode.All,
+                NamespaceProvider = new Dictionary<NamespaceKey, string> { { new NamespaceKey("http://wadl.dev.java.net/2009/02"), "Wadl" } }.ToNamespaceProvider(new GeneratorConfiguration { NamespacePrefix = "Wadl" }.NamespaceProvider.GenerateNamespace),
+                MemberVisitor = (member, model) => { },
+                InheritenceName = config.InheritenceName,
+                InheritenceNamespace = config.InheritenceNamespace,
+                ValueTypeEnable = true
+            });
+            TestWithValueTypeInheritenceSamples("Wadl", WadlPattern);
+        }
+
+        [Fact, TestPriority(4)]
+        [UseCulture("en-US")]
+        public void CanDeserializeSampleIS24ImmoTransferXml()
+        {
             Compile("IS24ImmoTransfer", IS24ImmoTransferPattern);
             TestSamples("IS24ImmoTransfer", IS24ImmoTransferPattern);
+        }
+
+        [Fact, TestPriority(4)]
+        [UseCulture("en-US")]
+        public void CanDeserializeSampleIS24ImmoTransferToValueObjectXml()
+        {
+            var config = GetValueObjectGeneratorStartup();
+            config.NamespacePrefix = "IS24ImmoTransfer";
+            Compile("IS24ImmoTransfer", IS24ImmoTransferPattern, config);
+            TestWithValueTypeInheritenceSamples("IS24ImmoTransfer", IS24ImmoTransferPattern);
+        }
+
+        [Fact, TestPriority(5)]
+        [UseCulture("en-US")]
+        public void CanDeserializeSampleIataXml()
+        {
             Compile("Iata", IataPattern, new Generator
             {
                 EntityFramework = true,
@@ -123,6 +212,26 @@ namespace XmlSchemaClassGenerator.Tests
             TestSamples("Iata", IataPattern);
         }
 
+        [Fact, TestPriority(5)]
+        [UseCulture("en-US")]
+        public void CanDeserializeSampleIataToValueObjectXml()
+        {
+            var gen = GetValueObjectGeneratorStartup();
+            Compile("Iata", IataPattern, new Generator
+            {
+                EntityFramework = true,
+                DataAnnotationMode = DataAnnotationMode.All,
+                NamespaceProvider = new Dictionary<NamespaceKey, string> { { new NamespaceKey(""), "XmlSchema" }, { new NamespaceKey("http://www.iata.org/IATA/EDIST/2017.2"), "Iata" } }
+                    .ToNamespaceProvider(new GeneratorConfiguration { NamespacePrefix = "Wadl" }.NamespaceProvider.GenerateNamespace),
+                MemberVisitor = (member, model) => { },
+                GenerateInterfaces = true,
+                InheritenceName = gen.InheritenceName,
+                InheritenceNamespace = gen.InheritenceNamespace,
+                ValueTypeEnable = true
+            });
+            TestWithValueTypeInheritenceSamples("Iata", IataPattern);
+        }
+
         private void TestSamples(string name, string pattern)
         {
             Assemblies.TryGetValue(name, out Assembly assembly);
@@ -130,7 +239,17 @@ namespace XmlSchemaClassGenerator.Tests
             DeserializeSampleXml(pattern, assembly);
         }
 
+        private void TestWithValueTypeInheritenceSamples(string name, string pattern)
+        {
+            Assemblies.TryGetValue(name, out Assembly assembly);
+            Assert.NotNull(assembly);
+            DeserializeSampleXml(pattern, assembly, true);
+        }
+
         private void DeserializeSampleXml(string pattern, Assembly assembly)
+            => DeserializeSampleXml(pattern, assembly, false);
+
+        private void DeserializeSampleXml(string pattern, Assembly assembly, bool valueTypeEnabled)
         {
             var files = Glob.Glob.ExpandNames(pattern);
 
@@ -193,8 +312,10 @@ namespace XmlSchemaClassGenerator.Tests
                     // deserialize again
                     sr = new StringReader(xml2);
                     var o2 = serializer.Deserialize(sr);
-
-                    AssertEx.Equal(o, o2);
+                    if (!valueTypeEnabled)
+                        AssertEx.Equal(o, o2);
+                    else
+                        Assert.Equal(o, o2);
                 }
             }
         }
@@ -228,7 +349,7 @@ namespace XmlSchemaClassGenerator.Tests
                 "Store",
                 "TradeSite" };
 
-        [Fact, TestPriority(2)]
+        [Fact, TestPriority(6)]
         public void ProducesSameXmlAsXsd()
         {
             var assembly = Compile("IS24RestApi", IS24Pattern);
@@ -263,7 +384,7 @@ namespace XmlSchemaClassGenerator.Tests
             }
         }
 
-        [Fact, TestPriority(3)]
+        [Fact, TestPriority(7)]
         public void CanSerializeAndDeserializeAllExampleXmlFiles()
         {
             var assembly = Compile("IS24RestApi", IS24Pattern);

@@ -18,6 +18,19 @@ using System.Xml.Serialization;
 
 namespace XmlSchemaClassGenerator
 {
+    public static class ValueObjectNamespace
+    {
+        public static CodeNamespace GettNamespace(GeneratorConfiguration configuration)
+        {
+            var codeNamespace = new CodeNamespace(configuration.InheritenceNamespace);
+            codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections"));
+            codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections.Generic"));
+            codeNamespace.Imports.Add(new CodeNamespaceImport("System.Linq"));
+            codeNamespace.Types.Add(new ValueObjectModel(configuration).Generate());
+            codeNamespace.Types.Add(new ValueObjectInterface(configuration).Generate());
+            return codeNamespace;
+        }
+    }
     public class NamespaceModel
     {
         public string Name { get; set; }
@@ -222,10 +235,10 @@ namespace XmlSchemaClassGenerator
         public List<PropertyModel> Properties { get; set; }
         public List<InterfaceModel> Interfaces { get; set; }
         public List<ClassModel> DerivedTypes { get; set; }
-        public bool EnableDataBinding { get; set; }
-        public bool RemoveUderscoreInPriverMember { get; set; }
-        public string InheritenceNamespace { get; set; }
-        public bool ValueTypeEnable { get; set; }
+        public bool EnableDataBinding => Configuration.EnableDataBinding;
+        public bool RemoveUderscoreInPriverMember => Configuration.RemoveUderscoreInPriverMember;
+        public string InheritenceNamespace => Configuration.InheritenceNamespace;
+        public bool ValueTypeEnable => Configuration.ValueTypeEnable;
 
         public ClassModel(GeneratorConfiguration configuration)
             : base(configuration)
@@ -408,25 +421,28 @@ namespace XmlSchemaClassGenerator
                 classDeclaration.CustomAttributes.Add(includeAttribute);
             }
 
-            classDeclaration.BaseTypes.AddRange(Interfaces.Select(i => i.GetReferenceFor(Namespace, false)).ToArray());
             if (Configuration.ValueTypeEnable)
                 GenerateGetEqualityMethod(classDeclaration);
-
+            classDeclaration.BaseTypes.AddRange(Interfaces.Select(i => i.GetReferenceFor(Namespace, false)).ToArray());
+           
             return classDeclaration;
         }
         private void GenerateGetEqualityMethod(CodeTypeDeclaration classDeclaration)
         {
             var hasNoBaseClass = classDeclaration.BaseTypes.Count == 0;
             if (hasNoBaseClass)
-                classDeclaration.BaseTypes.Add(new CodeTypeReference(Configuration.InheritenceName));
+                classDeclaration.BaseTypes.Add(new CodeTypeReference("I"+Configuration.InheritenceName));
             var getEqualityComponents = new CodeMemberMethod
             {
                 Name = "GetEqualityComponents",
                 ReturnType = new CodeTypeReference("IEnumerable<object>"),
-                Attributes = MemberAttributes.Override | MemberAttributes.Family,
+                Attributes = MemberAttributes.Public
             };
             if (!hasNoBaseClass)
+            {
                 getEqualityComponents.Statements.Add(new CodeSnippetStatement($"            yield return base.GetEqualityComponents();"));
+                getEqualityComponents.Attributes |= MemberAttributes.New;
+            }
             foreach (var item in classDeclaration.Members)
             {
                 var itemCode = item as CodeMemberField;
@@ -503,16 +519,20 @@ namespace XmlSchemaClassGenerator
         }
         public override bool Equals(object obj)
         {
-            return base.Equals(obj);
+            var compare = obj as I{1};
+            if (compare == null)
+                return false;
+            return {1}.EqualsValueObject(this, compare);
         }
-
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return {1}.GetHashCodeValueObject(this);
         }");
             var getEqualMethod = new CodeSnippetTypeMember(
                 CodeUtilities.NormalizeNewlines(
-                    code.Replace("{0}", codeType.Name).ToString()));
+                    code
+                    .Replace("{0}", codeType.Name)
+                    .Replace("{1}", Configuration.InheritenceName).ToString()));
             codeType.Members.Add(getEqualMethod);
         }
 
@@ -1157,17 +1177,6 @@ namespace XmlSchemaClassGenerator
 
     public class ValueObjectModel : TypeModel
     {
-        public static CodeNamespace GettNamespace(GeneratorConfiguration configuration)
-        {
-            var codeNamespace = new CodeNamespace(configuration.InheritenceNamespace);
-            codeNamespace.Imports.Add(new CodeNamespaceImport("System"));
-            codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections"));
-            codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections.Generic"));
-            codeNamespace.Imports.Add(new CodeNamespaceImport("System.Linq"));
-            var type = new ValueObjectModel(configuration).Generate();
-            codeNamespace.Types.Add(type);
-            return codeNamespace;
-        }
         public ValueObjectModel(GeneratorConfiguration configuration) : base(configuration)
         {
         }
@@ -1176,7 +1185,11 @@ namespace XmlSchemaClassGenerator
             var valueObjectDeclaration = base.Generate();
             valueObjectDeclaration.IsClass = true;
             valueObjectDeclaration.IsPartial = false;
-            valueObjectDeclaration.TypeAttributes = TypeAttributes.Abstract|TypeAttributes.Class|TypeAttributes.Public;
+            valueObjectDeclaration.TypeAttributes = TypeAttributes.AutoLayout | 
+                TypeAttributes.AnsiClass | 
+                TypeAttributes.Class | 
+                TypeAttributes.Public |
+                TypeAttributes.BeforeFieldInit;
             valueObjectDeclaration.Name = Configuration.InheritenceName;
             GenerateValueObjectMethod(valueObjectDeclaration);
             return valueObjectDeclaration;
@@ -1184,20 +1197,21 @@ namespace XmlSchemaClassGenerator
         private void GenerateValueObjectMethod(CodeTypeDeclaration classDeclaration)
         {
             var code = new StringBuilder(
-@"        protected abstract IEnumerable<object> GetEqualityComponents();
-
-        public override bool Equals(object obj)
+@"        public static bool EqualsValueObject(I{0} a, I{0} b)
         {
-            if (obj == null)
+            if (ReferenceEquals(a, null) && ReferenceEquals(b, null))
+                return true;
+
+            if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
+                return false;
+            
+            if (a.GetType() != b.GetType())
                 return false;
 
-            if (GetType() != obj.GetType())
-                throw new ArgumentException($""Invalid comparison of Value Objects of different types: {GetType()} and {obj.GetType()}"");
-
-            return GetHashCode() == obj.GetHashCode();
+            return GetHashCodeValueObject(a) == GetHashCodeValueObject(b);
         }
 
-        private void UpdateHashCode(IEnumerable enumerable, ref int hashCode)
+        private static void UpdateHashCode(IEnumerable enumerable, ref int hashCode)
         {
             unchecked
             {
@@ -1207,14 +1221,14 @@ namespace XmlSchemaClassGenerator
                     if (enumerator.Current is IEnumerable)
                         UpdateHashCode((IEnumerable)enumerator.Current, ref hashCode);
                     else
-                        hashCode = hashCode * 23 + (enumerator.Current?.GetHashCode() ?? 0);
+                        hashCode = hashCode * 23 + (enumerator.Current!=null ? enumerator.Current.GetHashCode() : 0);
                 }
             }
         }
 
-        public override int GetHashCode()
+        public static int GetHashCodeValueObject(I{0} valueObject)
         {
-            return GetEqualityComponents()
+            return valueObject.GetEqualityComponents()
                 .Aggregate(1, (current, obj) =>
                 {
                     unchecked
@@ -1225,29 +1239,42 @@ namespace XmlSchemaClassGenerator
                             UpdateHashCode(enumerable, ref current);
                             return current;
                         }
-                        return current * 23 + (obj?.GetHashCode() ?? 0);
+                        return current * 23 + (obj !=null ? obj.GetHashCode() : 0);
                     }
                 });
-        }
-
-        public static bool operator ==({0} a, {0} b)
-        {
-            if (ReferenceEquals(a, null) && ReferenceEquals(b, null))
-                return true;
-
-            if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
-                return false;
-
-            return a.Equals(b);
-        }
-
-        public static bool operator !=({0} a, {0} b)
-        {
-            return !(a == b);
         }");
 
             var getEqualMethod = new CodeSnippetTypeMember(
                 CodeUtilities.NormalizeNewlines(code.Replace("{0}", Configuration.InheritenceName).ToString()));
+            classDeclaration.Members.Add(getEqualMethod);
+        }
+    }
+
+    public class ValueObjectInterface: TypeModel
+    {
+        public ValueObjectInterface(GeneratorConfiguration configuration) : base(configuration)
+        {
+        }
+        public override CodeTypeDeclaration Generate()
+        {
+            var valueObjectInterfaceDeclaration = base.Generate();
+            valueObjectInterfaceDeclaration.IsClass = false;
+            valueObjectInterfaceDeclaration.IsPartial = false;
+            valueObjectInterfaceDeclaration.IsInterface = true;
+            valueObjectInterfaceDeclaration.TypeAttributes = TypeAttributes.AutoLayout |
+                TypeAttributes.Public |
+                TypeAttributes.Interface |
+                TypeAttributes.BeforeFieldInit;
+            valueObjectInterfaceDeclaration.Name = "I"+Configuration.InheritenceName;
+            GenerateValueInterfaceMethod(valueObjectInterfaceDeclaration);
+            return valueObjectInterfaceDeclaration;
+        }
+        private void GenerateValueInterfaceMethod(CodeTypeDeclaration classDeclaration)
+        {
+            var code = new StringBuilder(
+@"        IEnumerable<object> GetEqualityComponents();");
+            var getEqualMethod = new CodeSnippetTypeMember(
+                CodeUtilities.NormalizeNewlines(code.ToString()));
             classDeclaration.Members.Add(getEqualMethod);
         }
     }
