@@ -161,6 +161,7 @@ namespace XmlSchemaClassGenerator
         public bool GenerateSetterInCollection { get; set; }
         public bool RemoveUderscoreInPriverMember { get; set; }
         public bool ValueTypeEnable { get; set; }
+        public bool DisableValueTypeInPartialClass { get; set; }
         public string InheritenceName { get; set; }
         public string InheritenceNamespace { get; set; }
     }

@@ -40,6 +40,7 @@ namespace XmlSchemaClassGenerator.Console
             string inheritenceName=null;
             string inheritenceNamespace = null;
             var valueTypeEnable = false;
+            var disableValueTypeInPartialClass = false;
 
             var generateDebuggerStepThroughAttribute = true;
             var disableComments = false;
@@ -89,6 +90,7 @@ If no mapping is found for an XML namespace, a name is generated automatically (
                 { "rsc|removeSetterInCollection", "don't generate setter in Collection (default is false)", v => setterInCollection = !(v != null) },
                 { "pu|privateUnderscore", "generate underscore in priver member name (default is false)", v => removeUnderscoreInPrivateMember = !(v != null) },
                 { "vt|valueType","generate class derived from value type class (default is false)", v => valueTypeEnable = (v!=null) },
+                { "dvp|diasbelValueTypeInPartial","disable generate all logic for valueType in separate partial class (working with -vt only) (default is false)", v => disableValueTypeInPartialClass= (v!=null) },
                 { "ih|inheritenceName=", "valueType name (default is ValueObject)", v => inheritenceName = v },
                 { "in|inheritenceNamespace=", "valueType namespace (default is CSharpFunctionalExtensions)", v => inheritenceNamespace = v },
             };
@@ -150,6 +152,7 @@ If no mapping is found for an XML namespace, a name is generated automatically (
             generator.InheritenceName = inheritenceName ?? valueTypeName;
             generator.InheritenceNamespace = inheritenceNamespace ?? valueTypeNamespace;
             generator.ValueTypeEnable = valueTypeEnable;
+            generator.DisableValueTypeInPartialClass = disableValueTypeInPartialClass;
 
             if (verbose) { generator.Log = s => System.Console.Out.WriteLine(s); }
 
