@@ -189,6 +189,12 @@ namespace XmlSchemaClassGenerator
             get { return _configuration.ValueTypeEnable; }
             set { _configuration.ValueTypeEnable = value; }
         }
+
+        public bool DisableValueTypeInPartialClass
+        {
+            get { return _configuration.DisableValueTypeInPartialClass; }
+            set { _configuration.DisableValueTypeInPartialClass = value; }
+        }
         public string InheritenceName
         {
             get { return _configuration.InheritenceName; }
