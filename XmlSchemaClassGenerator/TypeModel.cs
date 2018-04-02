@@ -26,10 +26,14 @@ namespace XmlSchemaClassGenerator
             codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections"));
             codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections.Generic"));
             codeNamespace.Imports.Add(new CodeNamespaceImport("System.Linq"));
-            codeNamespace.Types.Add(new ValueObjectModel(configuration).Generate());
-            codeNamespace.Types.Add(new ValueObjectInterface(configuration).Generate());
+            codeNamespace.Types.Add(new ValueObjectModel(configuration).Generate()[0]);
+            codeNamespace.Types.Add(new ValueObjectInterface(configuration).Generate()[0]);
             return codeNamespace;
         }
+    }
+    public class NameSpaceWihPartial
+    {
+
     }
     public class NamespaceModel
     {
@@ -78,7 +82,7 @@ namespace XmlSchemaClassGenerator
 
             foreach (var typeModel in typeModels)
             {
-                var type = typeModel.Generate();
+                var type = typeModel.Generate() !=null ? typeModel.Generate()[0] : null;
                 if (type != null)
                 {
                     codeNamespace.Types.Add(type);
@@ -133,8 +137,9 @@ namespace XmlSchemaClassGenerator
             Documentation = new List<DocumentationModel>();
         }
 
-        public virtual CodeTypeDeclaration Generate()
+        public virtual List<CodeTypeDeclaration> Generate()
         {
+            var partials = new List<CodeTypeDeclaration>();
             var typeDeclaration = new CodeTypeDeclaration { Name = Name };
 
             typeDeclaration.Comments.AddRange(DocumentationModel.GetComments(Documentation).ToArray());
@@ -147,8 +152,8 @@ namespace XmlSchemaClassGenerator
                 new CodeAttributeArgument(new CodePrimitiveExpression(title)),
                 new CodeAttributeArgument(new CodePrimitiveExpression(version)));
             typeDeclaration.CustomAttributes.Add(generatedAttribute);
-
-            return typeDeclaration;
+            partials.Add(typeDeclaration);
+            return partials;
         }
 
         protected void GenerateTypeAttribute(CodeTypeDeclaration typeDeclaration)
@@ -210,9 +215,10 @@ namespace XmlSchemaClassGenerator
         public List<PropertyModel> Properties { get; set; }
         public List<InterfaceModel> Interfaces { get; set; }
 
-        public override CodeTypeDeclaration Generate()
+        public override List<CodeTypeDeclaration> Generate()
         {
-            var interfaceDeclaration = base.Generate();
+            var partialFromBase = base.Generate();
+            var interfaceDeclaration = partialFromBase[0];
 
             interfaceDeclaration.IsInterface = true;
             interfaceDeclaration.IsPartial = true;
@@ -222,7 +228,7 @@ namespace XmlSchemaClassGenerator
 
             interfaceDeclaration.BaseTypes.AddRange(Interfaces.Select(i => i.GetReferenceFor(Namespace, false)).ToArray());
 
-            return interfaceDeclaration;
+            return partialFromBase;
         }
     }
 
@@ -261,9 +267,10 @@ namespace XmlSchemaClassGenerator
             }
         }
 
-        public override CodeTypeDeclaration Generate()
+        public override List<CodeTypeDeclaration> Generate()
         {
-            var classDeclaration = base.Generate();
+            var partialsFromBase = base.Generate();
+            var classDeclaration = partialsFromBase[0];
 
             GenerateSerializableAttribute(classDeclaration);
             GenerateTypeAttribute(classDeclaration);
@@ -424,8 +431,7 @@ namespace XmlSchemaClassGenerator
             if (Configuration.ValueTypeEnable)
                 GenerateGetEqualityMethod(classDeclaration);
             classDeclaration.BaseTypes.AddRange(Interfaces.Select(i => i.GetReferenceFor(Namespace, false)).ToArray());
-           
-            return classDeclaration;
+            return partialsFromBase;
         }
         private void GenerateGetEqualityMethod(CodeTypeDeclaration classDeclaration)
         {
@@ -1180,9 +1186,10 @@ namespace XmlSchemaClassGenerator
         public ValueObjectModel(GeneratorConfiguration configuration) : base(configuration)
         {
         }
-        public override CodeTypeDeclaration Generate()
+        public override List<CodeTypeDeclaration> Generate()
         {
-            var valueObjectDeclaration = base.Generate();
+            var partialsFromBase = base.Generate();
+            var valueObjectDeclaration = partialsFromBase[0];
             valueObjectDeclaration.IsClass = true;
             valueObjectDeclaration.IsPartial = false;
             valueObjectDeclaration.TypeAttributes = TypeAttributes.AutoLayout | 
@@ -1192,7 +1199,7 @@ namespace XmlSchemaClassGenerator
                 TypeAttributes.BeforeFieldInit;
             valueObjectDeclaration.Name = Configuration.InheritenceName;
             GenerateValueObjectMethod(valueObjectDeclaration);
-            return valueObjectDeclaration;
+            return partialsFromBase;
         }
         private void GenerateValueObjectMethod(CodeTypeDeclaration classDeclaration)
         {
@@ -1255,9 +1262,10 @@ namespace XmlSchemaClassGenerator
         public ValueObjectInterface(GeneratorConfiguration configuration) : base(configuration)
         {
         }
-        public override CodeTypeDeclaration Generate()
+        public override List<CodeTypeDeclaration> Generate()
         {
-            var valueObjectInterfaceDeclaration = base.Generate();
+            var partialsFromBase = base.Generate();
+            var valueObjectInterfaceDeclaration = partialsFromBase[0];
             valueObjectInterfaceDeclaration.IsClass = false;
             valueObjectInterfaceDeclaration.IsPartial = false;
             valueObjectInterfaceDeclaration.IsInterface = true;
@@ -1267,7 +1275,7 @@ namespace XmlSchemaClassGenerator
                 TypeAttributes.BeforeFieldInit;
             valueObjectInterfaceDeclaration.Name = "I"+Configuration.InheritenceName;
             GenerateValueInterfaceMethod(valueObjectInterfaceDeclaration);
-            return valueObjectInterfaceDeclaration;
+            return partialsFromBase;
         }
         private void GenerateValueInterfaceMethod(CodeTypeDeclaration classDeclaration)
         {
@@ -1289,9 +1297,10 @@ namespace XmlSchemaClassGenerator
             Values = new List<EnumValueModel>();
         }
 
-        public override CodeTypeDeclaration Generate()
+        public override List<CodeTypeDeclaration> Generate()
         {
-            var enumDeclaration = base.Generate();
+            var partialsFromBase = base.Generate();
+            var enumDeclaration = partialsFromBase[0];
 
             GenerateSerializableAttribute(enumDeclaration);
             GenerateTypeAttribute(enumDeclaration);
@@ -1325,7 +1334,7 @@ namespace XmlSchemaClassGenerator
                 enumDeclaration.Members.Add(member);
             }
 
-            return enumDeclaration;
+            return partialsFromBase;
         }
 
         public override CodeExpression GetDefaultValueFor(string defaultString)
@@ -1380,7 +1389,7 @@ namespace XmlSchemaClassGenerator
             return fullTypeName;
         }
 
-        public override CodeTypeDeclaration Generate()
+        public override List<CodeTypeDeclaration> Generate()
         {
             return null;
         }
