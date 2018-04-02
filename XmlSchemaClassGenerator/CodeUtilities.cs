@@ -187,7 +187,7 @@ namespace XmlSchemaClassGenerator
         public static string GetUniqueFieldName(this TypeModel typeModel, PropertyModel propertyModel)
         {
             var classModel = typeModel as ClassModel;
-            var propBackingFieldName = propertyModel.Name.ToBackingField(classModel?.RemoveUderscoreInPriverMember==true);
+            var propBackingFieldName = propertyModel.Name.ToBackingField(classModel?.Configuration.RemoveUderscoreInPriverMember == true);
 
             if (CShaprpKeywords.Contains(propBackingFieldName.ToLower()))
                 propBackingFieldName = "@" + propBackingFieldName;
@@ -200,7 +200,7 @@ namespace XmlSchemaClassGenerator
             var i = 0;
             foreach (var prop in classModel.Properties)
             {
-                if (!classModel.EnableDataBinding && !(prop.Type is SimpleModel))
+                if (!classModel.Configuration.EnableDataBinding && !(prop.Type is SimpleModel))
                 {
                     continue;
                 }
@@ -211,7 +211,7 @@ namespace XmlSchemaClassGenerator
                     break;
                 }
 
-                var backingFieldName = prop.Name.ToBackingField(classModel.RemoveUderscoreInPriverMember);
+                var backingFieldName = prop.Name.ToBackingField(classModel.Configuration.RemoveUderscoreInPriverMember);
                 if (backingFieldName == propBackingFieldName)
                 {
                     i += 1;

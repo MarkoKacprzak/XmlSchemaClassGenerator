@@ -67,24 +67,29 @@ namespace XmlSchemaClassGenerator
             codeNamespace.Imports.Add(new CodeNamespaceImport("System.Xml.Serialization"));
 
             var typeModels = parts.SelectMany(x => x.Types.Values).ToList();
-            if (typeModels.OfType<ClassModel>().Any(x => x.EnableDataBinding))
+            if (typeModels.OfType<ClassModel>().Any(x => x.Configuration.EnableDataBinding))
             {
                 codeNamespace.Imports.Add(new CodeNamespaceImport("System.Linq"));
                 codeNamespace.Imports.Add(new CodeNamespaceImport("System.ComponentModel"));
             }
-
-            var valueTypeEnable = typeModels.OfType<ClassModel>()
-                .Any(x => x.ValueTypeEnable);
-
+            
             foreach (var typeModel in typeModels)
             {
                 var type = typeModel.Generate();
                 if (type == null)
                     continue;
 
-                if (valueTypeEnable)
+                if (typeModels.OfType<ClassModel>().Any(x => x.Configuration.ValueTypeEnable))
                 {
                     codeNamespace.Types.Add(type[0]);
+                    if (typeModels.OfType<ClassModel>().Any(x => x.Configuration.DisableValueTypeInPartialClass))
+                    {
+                        var inheritenceNamespace = typeModels.OfType<ClassModel>()
+                           .Select(x => x.Configuration.InheritenceNamespace)
+                           .Where(x => !string.IsNullOrEmpty(x))
+                           .First();
+                        codeNamespace.Imports.Add(new CodeNamespaceImport(inheritenceNamespace));
+                    }
                     if (type.Count > 1)
                     {
                         GenerateAdditionalPartial(codeNamespaceWihPartial, type, typeModels);
@@ -113,9 +118,8 @@ namespace XmlSchemaClassGenerator
                     var additionalPartial = new CodeNamespace(codeNamespaceWihPartial.MainPartial.Name);
                     codeNamespaceWihPartial.AdditionalPartial.Add(additionalPartial);
                     additionalPartial.Imports.Add(new CodeNamespaceImport("System.Collections.Generic"));
-                    additionalPartial.Imports.Add(new CodeNamespaceImport("System.Collections.ObjectModel"));
                     var inheritenceNamespace = typeModels.OfType<ClassModel>()
-                    .Select(x => x.InheritenceNamespace)
+                    .Select(x => x.Configuration.InheritenceNamespace)
                     .Where(x => !string.IsNullOrEmpty(x))
                     .First();
                     additionalPartial.Imports.Add(new CodeNamespaceImport(inheritenceNamespace));
@@ -168,6 +172,9 @@ namespace XmlSchemaClassGenerator
         }
 
         public virtual List<CodeTypeDeclaration> Generate()
+            => Generate(true);
+
+        protected List<CodeTypeDeclaration> Generate(bool generatedCodeAttribute)
         {
             var partials = new List<CodeTypeDeclaration>();
             var typeDeclaration = new CodeTypeDeclaration { Name = Name };
@@ -181,7 +188,8 @@ namespace XmlSchemaClassGenerator
             var generatedAttribute = new CodeAttributeDeclaration(new CodeTypeReference(typeof(GeneratedCodeAttribute), Configuration.CodeTypeReferenceOptions),
                 new CodeAttributeArgument(new CodePrimitiveExpression(title)),
                 new CodeAttributeArgument(new CodePrimitiveExpression(version)));
-            typeDeclaration.CustomAttributes.Add(generatedAttribute);
+            if (generatedCodeAttribute)
+                typeDeclaration.CustomAttributes.Add(generatedAttribute);
             partials.Add(typeDeclaration);
             return partials;
         }
@@ -271,10 +279,6 @@ namespace XmlSchemaClassGenerator
         public List<PropertyModel> Properties { get; set; }
         public List<InterfaceModel> Interfaces { get; set; }
         public List<ClassModel> DerivedTypes { get; set; }
-        public bool EnableDataBinding => Configuration.EnableDataBinding;
-        public bool RemoveUderscoreInPriverMember => Configuration.RemoveUderscoreInPriverMember;
-        public string InheritenceNamespace => Configuration.InheritenceNamespace;
-        public bool ValueTypeEnable => Configuration.ValueTypeEnable;
 
         public ClassModel(GeneratorConfiguration configuration)
             : base(configuration)
@@ -308,7 +312,7 @@ namespace XmlSchemaClassGenerator
             classDeclaration.IsClass = true;
             classDeclaration.IsPartial = true;
 
-            if (EnableDataBinding)
+            if (Configuration.EnableDataBinding)
             {
                 classDeclaration.Members.Add(new CodeMemberEvent()
                 {
@@ -355,9 +359,9 @@ namespace XmlSchemaClassGenerator
                         Attributes = MemberAttributes.Public,
                     };
 
-                    if (EnableDataBinding)
+                    if (Configuration.EnableDataBinding)
                     {
-                        var backingFieldMember = new CodeMemberField(typeReference, member.Name.ToBackingField(RemoveUderscoreInPriverMember))
+                        var backingFieldMember = new CodeMemberField(typeReference, member.Name.ToBackingField(Configuration.RemoveUderscoreInPriverMember))
                         {
                             Attributes = MemberAttributes.Private
                         };
@@ -390,7 +394,7 @@ namespace XmlSchemaClassGenerator
                 }
             }
 
-            if (EnableDataBinding)
+            if (Configuration.EnableDataBinding)
             {
                 classDeclaration.BaseTypes.Add(new CodeTypeReference(typeof(INotifyPropertyChanged), Configuration.CodeTypeReferenceOptions));
             }
@@ -418,7 +422,7 @@ namespace XmlSchemaClassGenerator
             }
 
             foreach (var property in Properties)
-                property.AddMembersTo(classDeclaration, EnableDataBinding);
+                property.AddMembersTo(classDeclaration, Configuration.EnableDataBinding);
 
             if (IsMixed && (BaseClass == null || (BaseClass is ClassModel && !AllBaseClasses.Any(b => b.IsMixed))))
             {
@@ -460,15 +464,14 @@ namespace XmlSchemaClassGenerator
 
             if (Configuration.ValueTypeEnable)
             {
-                if (false)
+                if (Configuration.DisableValueTypeInPartialClass)
                     GenerateGetEqualityMethod(classDeclaration);
                 else
                 {
-                    var partialDeclaration = base.Generate()[0];
-                    GenerateSerializableAttribute(classDeclaration);                    
+                    var partialDeclaration = Generate(false)[0];                    
                     partialDeclaration.IsClass = true;
                     partialDeclaration.IsPartial = true;
-                    GenerateGetEqualityMethod(partialDeclaration, partialDeclaration);
+                    GenerateGetEqualityMethod(classDeclaration, partialDeclaration);
                     partialsFromBase.Add(partialDeclaration);
                 }
             }
@@ -488,10 +491,11 @@ namespace XmlSchemaClassGenerator
                 ReturnType = new CodeTypeReference("IEnumerable<object>"),
                 Attributes = MemberAttributes.Public
             };
+
             if (!hasNoBaseClass)
             {
                 getEqualityComponents.Statements.Add(new CodeSnippetStatement($"            yield return base.GetEqualityComponents();"));
-                getEqualityComponents.Attributes |= MemberAttributes.New;
+                getEqualityComponents.Attributes |= MemberAttributes.Override;
             }
             foreach (var item in classDeclaration.Members)
             {
@@ -510,7 +514,7 @@ namespace XmlSchemaClassGenerator
             {
                 getEqualityComponents.Statements.Add(new CodeSnippetStatement($"            return new List<object>();"));
             }
-            classDeclaration.Members.Add(getEqualityComponents);
+            classGenerationDeclaration.Members.Add(getEqualityComponents);
             GenerateEqualMethod(classGenerationDeclaration);
         }
 
