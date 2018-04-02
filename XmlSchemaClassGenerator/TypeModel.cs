@@ -31,9 +31,10 @@ namespace XmlSchemaClassGenerator
             return codeNamespace;
         }
     }
-    public class NameSpaceWihPartial
+    public class CodeNamespaceWihPartial
     {
-
+        public CodeNamespace MainPartial { get; set; }
+        public List<CodeNamespace> AdditionalPartial { get; set; } = new List<CodeNamespace>();
     }
     public class NamespaceModel
     {
@@ -53,9 +54,13 @@ namespace XmlSchemaClassGenerator
             Types = new Dictionary<string, TypeModel>();
         }
 
-        public static CodeNamespace Generate(string namespaceName, IEnumerable<NamespaceModel> parts)
+        public static CodeNamespaceWihPartial Generate(string namespaceName, IEnumerable<NamespaceModel> parts)
         {
-            var codeNamespace = new CodeNamespace(namespaceName);
+            var codeNamespaceWihPartial = new CodeNamespaceWihPartial
+            {
+                MainPartial = new CodeNamespace(namespaceName)
+            };
+            var codeNamespace = codeNamespaceWihPartial.MainPartial;
             codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections"));
             codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections.Generic"));
             codeNamespace.Imports.Add(new CodeNamespaceImport("System.Collections.ObjectModel"));
@@ -71,28 +76,53 @@ namespace XmlSchemaClassGenerator
             var valueTypeEnable = typeModels.OfType<ClassModel>()
                 .Any(x => x.ValueTypeEnable);
 
-            if (valueTypeEnable)
-            {
-                var inheritenceNamespace = typeModels.OfType<ClassModel>()
-                .Select(x => x.InheritenceNamespace)
-                .Where(x => !string.IsNullOrEmpty(x))
-                .First();
-                codeNamespace.Imports.Add(new CodeNamespaceImport(inheritenceNamespace));
-            }
-
             foreach (var typeModel in typeModels)
             {
-                var type = typeModel.Generate() !=null ? typeModel.Generate()[0] : null;
-                if (type != null)
+                var type = typeModel.Generate();
+                if (type == null)
+                    continue;
+
+                if (valueTypeEnable)
                 {
-                    codeNamespace.Types.Add(type);
+                    codeNamespace.Types.Add(type[0]);
+                    if (type.Count > 1)
+                    {
+                        GenerateAdditionalPartial(codeNamespaceWihPartial, type, typeModels);
+                        for (int i = 1; i < type.Count; i++)
+                        {
+                            codeNamespaceWihPartial.AdditionalPartial[i-1].Types.Add(type[i]);
+                        }
+                    }
+                }
+                else
+                {
+                    codeNamespace.Types.Add(type[0]);
                 }
             }
-
-            return codeNamespace;
+            return codeNamespaceWihPartial;
+        }
+        private static void GenerateAdditionalPartial(CodeNamespaceWihPartial codeNamespaceWihPartial,
+            List<CodeTypeDeclaration> codeTypes, List<TypeModel> typeModels)
+        {
+            if (codeTypes == null)
+                return;
+            if (codeTypes.Count-1 > codeNamespaceWihPartial.AdditionalPartial.Count)
+            {
+                for (int i = codeNamespaceWihPartial.AdditionalPartial.Count; i < codeTypes.Count-1; i++)
+                {
+                    var additionalPartial = new CodeNamespace(codeNamespaceWihPartial.MainPartial.Name);
+                    codeNamespaceWihPartial.AdditionalPartial.Add(additionalPartial);
+                    additionalPartial.Imports.Add(new CodeNamespaceImport("System.Collections.Generic"));
+                    additionalPartial.Imports.Add(new CodeNamespaceImport("System.Collections.ObjectModel"));
+                    var inheritenceNamespace = typeModels.OfType<ClassModel>()
+                    .Select(x => x.InheritenceNamespace)
+                    .Where(x => !string.IsNullOrEmpty(x))
+                    .First();
+                    additionalPartial.Imports.Add(new CodeNamespaceImport(inheritenceNamespace));
+                }
+            }
         }
     }
-
     public class DocumentationModel
     {
         public string Language { get; set; }
@@ -429,15 +459,29 @@ namespace XmlSchemaClassGenerator
             }
 
             if (Configuration.ValueTypeEnable)
-                GenerateGetEqualityMethod(classDeclaration);
+            {
+                if (false)
+                    GenerateGetEqualityMethod(classDeclaration);
+                else
+                {
+                    var partialDeclaration = base.Generate()[0];
+                    GenerateSerializableAttribute(classDeclaration);                    
+                    partialDeclaration.IsClass = true;
+                    partialDeclaration.IsPartial = true;
+                    GenerateGetEqualityMethod(partialDeclaration, partialDeclaration);
+                    partialsFromBase.Add(partialDeclaration);
+                }
+            }
             classDeclaration.BaseTypes.AddRange(Interfaces.Select(i => i.GetReferenceFor(Namespace, false)).ToArray());
             return partialsFromBase;
         }
-        private void GenerateGetEqualityMethod(CodeTypeDeclaration classDeclaration)
+        private void GenerateGetEqualityMethod(CodeTypeDeclaration classDeclaration, CodeTypeDeclaration classGenerationDeclaration = null)
         {
+            if (classGenerationDeclaration == null)
+                classGenerationDeclaration = classDeclaration;
             var hasNoBaseClass = classDeclaration.BaseTypes.Count == 0;
             if (hasNoBaseClass)
-                classDeclaration.BaseTypes.Add(new CodeTypeReference("I"+Configuration.InheritenceName));
+                classGenerationDeclaration.BaseTypes.Add(new CodeTypeReference("I"+Configuration.InheritenceName));
             var getEqualityComponents = new CodeMemberMethod
             {
                 Name = "GetEqualityComponents",
@@ -467,7 +511,7 @@ namespace XmlSchemaClassGenerator
                 getEqualityComponents.Statements.Add(new CodeSnippetStatement($"            return new List<object>();"));
             }
             classDeclaration.Members.Add(getEqualityComponents);
-            GenerateEqualMethod(classDeclaration);
+            GenerateEqualMethod(classGenerationDeclaration);
         }
 
         private bool CheckIfIsDateTimeWithDateSignature(CodeAttributeDeclarationCollection customAttributes)
