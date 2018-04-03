@@ -538,12 +538,12 @@ namespace XmlSchemaClassGenerator
             var code = new StringBuilder(
      @"        public static bool operator ==({0} left, {0} right)
         {
-            return ValueObject.EqualsValueObject(left, right);
+            return {1}.EqualsValueObject(left, right);
         }
 
         public static bool operator !=({0} left, {0} right)
         {
-            return !ValueObject.EqualsValueObject(left, right);
+            return !{1}.EqualsValueObject(left, right);
         }
 
         public static bool operator ==(object left, {0} right)
