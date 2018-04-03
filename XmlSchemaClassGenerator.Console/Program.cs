@@ -44,6 +44,9 @@ namespace XmlSchemaClassGenerator.Console
 
             var generateDebuggerStepThroughAttribute = true;
             var disableComments = false;
+            var setterInCollection = false;
+            var doNotUseUnderscoreInPrivateMemberNames = false;
+
             var setterInCollection = true;
             var removeUnderscoreInPrivateMember = true;
             var options = new OptionSet {
@@ -93,6 +96,8 @@ If no mapping is found for an XML namespace, a name is generated automatically (
                 { "dvp|diasbelValueTypeInPartial","disable generate all logic for valueType in separate partial class (working with -vt only) (default is false)", v => disableValueTypeInPartialClass= (v!=null) },
                 { "ih|inheritenceName=", "valueType name (default is ValueObject)", v => inheritenceName = v },
                 { "in|inheritenceNamespace=", "valueType namespace (default is CSharpFunctionalExtensions)", v => inheritenceNamespace = v },
+                { "sc|setterInCollection", "generate setter in Collection (default is false)", v => setterInCollection = v != null },
+                { "nu|noUnderscore", "do not generate underscore in private member name (default is false)", v => doNotUseUnderscoreInPrivateMemberNames = v != null },
             };
 
             var files = options.Parse(args);
@@ -154,6 +159,7 @@ If no mapping is found for an XML namespace, a name is generated automatically (
             generator.ValueTypeEnable = valueTypeEnable;
             generator.DisableValueTypeInPartialClass = disableValueTypeInPartialClass;
 
+            generator.DoNotUseUnderscoreInPrivateMemberNames = doNotUseUnderscoreInPrivateMemberNames;
             if (verbose) { generator.Log = s => System.Console.Out.WriteLine(s); }
 
             generator.Generate(files);

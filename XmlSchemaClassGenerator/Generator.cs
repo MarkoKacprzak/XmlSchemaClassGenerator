@@ -178,10 +178,10 @@ namespace XmlSchemaClassGenerator
             get { return _configuration.GenerateSetterInCollection; }
             set { _configuration.GenerateSetterInCollection = value; }
         }
-        public bool RemoveUderscoreInPriverMember
+        public bool DoNotUseUnderscoreInPrivateMemberNames
         {
-            get { return _configuration.RemoveUderscoreInPriverMember; }
-            set { _configuration.RemoveUderscoreInPriverMember = value; }
+            get { return _configuration.DoNotUseUnderscoreInPrivateMemberNames; }
+            set { _configuration.DoNotUseUnderscoreInPrivateMemberNames = value; }
         }
 
         public bool ValueTypeEnable

@@ -279,7 +279,6 @@ namespace XmlSchemaClassGenerator
         public List<PropertyModel> Properties { get; set; }
         public List<InterfaceModel> Interfaces { get; set; }
         public List<ClassModel> DerivedTypes { get; set; }
-
         public ClassModel(GeneratorConfiguration configuration)
             : base(configuration)
         {
@@ -361,7 +360,7 @@ namespace XmlSchemaClassGenerator
 
                     if (Configuration.EnableDataBinding)
                     {
-                        var backingFieldMember = new CodeMemberField(typeReference, member.Name.ToBackingField(Configuration.RemoveUderscoreInPriverMember))
+                        var backingFieldMember = new CodeMemberField(typeReference, member.Name.ToBackingField(Configuration.DoNotUseUnderscoreInPrivateMemberNames))
                         {
                             Attributes = MemberAttributes.Private
                         };
