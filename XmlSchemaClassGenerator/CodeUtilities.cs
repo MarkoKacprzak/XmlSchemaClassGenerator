@@ -174,7 +174,7 @@ namespace XmlSchemaClassGenerator
             var classModel = typeModel as ClassModel;
             var propBackingFieldName = propertyModel.Name.ToBackingField(classModel?.Configuration.DoNotUseUnderscoreInPrivateMemberNames == true);
 
-            if (CShaprpKeywords.Contains(propBackingFieldName.ToLower()))
+            if (CSharpKeywords.Contains(propBackingFieldName.ToLower()))
                 propBackingFieldName = "@" + propBackingFieldName;
 
             if (classModel == null)
@@ -218,27 +218,27 @@ namespace XmlSchemaClassGenerator
             return NormalizeNewlinesRegex.Replace(text, "$1\r\n");
         }
 
-        static readonly List<string> CShaprpKeywords = new List<string>
+        static readonly List<string> CSharpKeywords = new List<string>
         {
             "abstract", "as", "base", "bool",
             "break", "byte", "case", "catch",
-            "char", "checked", "class   const",
+            "char", "checked", "class", "const",
             "continue", "decimal", "default", "delegate",
             "do", "double", "else", "enum",
             "event", " explicit", "extern", "false",
-            "finally", "fixed float", "for",
+            "finally", "fixed", "float", "for",
             "foreach", "goto", "if", "implicit",
-            "in", "int interface", "internal",
+            "in", "int", "interface", "internal",
             "is", "lock", "long", "namespace",
-            "new", "null", "object operator",
-            "out", "override", "params  private",
+            "new", "null", "object", "operator",
+            "out", "override", "params", "private",
             "protected", "public", "readonly", "ref",
-            "return", "sbyte sealed short",
-            "sizeof", "stackalloc", "static string",
+            "return", "sbyte", "sealed", "short",
+            "sizeof", "stackalloc", "static", "string",
             "struct", "switch", "this", "throw",
             "true", "try", "typeof", "uint",
-            "ulong", "unchecked", "unsafe ushort",
-            "using", "using static", "virtual void",
+            "ulong", "unchecked", "unsafe", "ushort",
+            "using", "using static", "virtual", "void",
             "volatile", "while"
         };
     }
