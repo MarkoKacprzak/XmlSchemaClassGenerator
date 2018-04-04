@@ -538,44 +538,33 @@ namespace XmlSchemaClassGenerator
             var code = new StringBuilder(
      @"        public static bool operator ==({0} left, {0} right)
         {
-            return left.Equals(right);
+            return {1}.EqualsValueObject(left, right);
         }
 
         public static bool operator !=({0} left, {0} right)
         {
-            return !left.Equals(right);
+            return !{1}.EqualsValueObject(left, right);
         }
 
         public static bool operator ==(object left, {0} right)
         {
-            if (left is {0})
-                return right.Equals(left);
-            return false;
+            return {1}.EqualsValueObject(left as {0}, right);
         }
         public static bool operator ==({0} left, object right)
         {
-            if (right is {0})
-                return left.Equals(right);
-            return false;
+            return {1}.EqualsValueObject(left, right as {0});
         }
         public static bool operator !=(object left, {0} right)
         {
-            if (left is {0})
-                return !right.Equals(left);
-            return true;
+            return !{1}.EqualsValueObject(left as {0}, right);
         }
         public static bool operator !=({0} left, object right)
         {
-            if (right is {0})
-                return !left.Equals(right);
-            return true;
+            return !{1}.EqualsValueObject(left, right as {0});
         }
         public override bool Equals(object obj)
         {
-            var compare = obj as I{1};
-            if (compare == null)
-                return false;
-            return {1}.EqualsValueObject(this, compare);
+            return {1}.EqualsValueObject(this, obj as I{1});
         }
         public override int GetHashCode()
         {
